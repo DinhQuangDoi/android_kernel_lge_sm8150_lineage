@@ -156,15 +156,21 @@ echo
 make "${make_args[@]}" "$defconfig"
 
 echo
-echo "Force enable SUSFS hook in .config"
+echo "Force correct KSU hook in .config"
 echo
 if [ "$ksu" = "true" ]; then
     ./out/scripts/config --file out/.config \
         --enable CONFIG_KSU_SUSFS \
         --disable CONFIG_KSU_TRACEPOINT_HOOK \
         --disable CONFIG_KSU_MANUAL_HOOK
-    make "${make_args[@]}" olddefconfig
+else
+    ./out/scripts/config --file out/.config \
+        --disable CONFIG_KSU \
+        --disable CONFIG_KSU_TRACEPOINT_HOOK \
+        --disable CONFIG_KSU_MANUAL_HOOK \
+        --disable CONFIG_KSU_SUSFS
 fi
+make "${make_args[@]}" olddefconfig
 
 echo
 echo "Build The Good Stuff"
