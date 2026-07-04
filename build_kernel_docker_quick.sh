@@ -164,12 +164,12 @@ echo
 echo "Force correct KSU hook in .config"
 echo
 if [ "$ksu" = "true" ]; then
-    ./out/scripts/config --file out/.config \
+    scripts/config --file out/.config \
         --enable CONFIG_KSU_SUSFS \
         --disable CONFIG_KSU_TRACEPOINT_HOOK \
         --disable CONFIG_KSU_MANUAL_HOOK
 else
-    ./out/scripts/config --file out/.config \
+    scripts/config --file out/.config \
         --disable CONFIG_KSU \
         --disable CONFIG_KSU_TRACEPOINT_HOOK \
         --disable CONFIG_KSU_MANUAL_HOOK \
