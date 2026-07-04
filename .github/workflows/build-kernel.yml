@@ -27,14 +27,6 @@ on:
           - Exclude
           - Both
         default: Exclude
-      ksu-repo:
-        description: 'ReSukiSU repository (if not using default)'
-        required: false
-        default: 'https://github.com/ReSukiSU/ReSukiSU'
-      ksu-branch:
-        description: 'ReSukiSU branch (if not using default)'
-        required: false
-        default: 'main'
       build:
         description: 'Output format'
         required: false
@@ -122,10 +114,6 @@ jobs:
           curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
           chmod +x antman
           ./antman -S
-
-      - name: Git Clone ReSukiSU
-        run: |
-          git clone --depth 1 --branch ${{ inputs.ksu-branch }} ${{ inputs.ksu-repo }} KernelSU
 
       - name: Git Clone AnyKernel3/Magisk kernel installer
         run: |
