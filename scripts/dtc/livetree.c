@@ -270,6 +270,33 @@ void add_child(struct node *parent, struct node *child)
 	*p = child;
 }
 
+struct node *add_orphan_node(struct node *dt, struct node *new_node, char *ref)
+{
+	static unsigned int next_orphan_fragment = 0;
+	struct node *node;
+	struct property *p;
+	struct data d = empty_data;
+	char *name;
+
+	if (ref[0] == '/') {
+		d = data_append_data(d, ref, strlen(ref) + 1);
+		p = build_property("target-path", d);
+	} else {
+		d = data_add_marker(d, REF_PHANDLE, ref);
+		d = data_append_integer(d, 0xffffffff, 32);
+		p = build_property("target", d);
+	}
+
+	xasprintf(&name, "fragment@%u",
+			next_orphan_fragment++);
+	name_node(new_node, "__overlay__");
+	node = build_node(p, new_node);
+	name_node(node, name);
+
+	add_child(dt, node);
+	return dt;
+}
+
 void delete_node_by_name(struct node *parent, char *name)
 {
 	struct node *node = parent->children;

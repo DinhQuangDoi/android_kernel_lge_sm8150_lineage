@@ -80,6 +80,7 @@ extern void yyerror(char const *s);
 
 extern struct dt_info *parser_output;
 extern bool treesource_error;
+int dt_plugin_mode = 0;
 
 #line 85 "dtc-parser.tab.c" /* yacc.c:339  */
 
@@ -1489,6 +1490,7 @@ yyreduce:
 #line 122 "dtc-parser.y" /* yacc.c:1646  */
     {
 			(yyval.flags) = DTSF_V1 | DTSF_PLUGIN;
+			dt_plugin_mode = 1;
 		}
 #line 1494 "dtc-parser.tab.c" /* yacc.c:1646  */
     break;
@@ -1560,7 +1562,9 @@ yyreduce:
 			if (target) {
 				add_label(&target->labels, (yyvsp[-2].labelref));
 				merge_nodes(target, (yyvsp[0].node));
-			} else
+			} else if (dt_plugin_mode)
+				add_orphan_node((yyvsp[-3].node), (yyvsp[0].node), (yyvsp[-1].labelref));
+			else
 				ERROR(&(yylsp[-1]), "Label or path %s not found", (yyvsp[-1].labelref));
 			(yyval.node) = (yyvsp[-3].node);
 		}
@@ -1574,6 +1578,8 @@ yyreduce:
 
 			if (target)
 				merge_nodes(target, (yyvsp[0].node));
+			else if (dt_plugin_mode)
+				add_orphan_node((yyvsp[-2].node), (yyvsp[0].node), (yyvsp[-1].labelref));
 			else
 				ERROR(&(yylsp[-1]), "Label or path %s not found", (yyvsp[-1].labelref));
 			(yyval.node) = (yyvsp[-2].node);

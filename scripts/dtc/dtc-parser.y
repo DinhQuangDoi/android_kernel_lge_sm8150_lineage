@@ -34,8 +34,9 @@ extern void yyerror(char const *s);
 
 extern struct dt_info *parser_output;
 extern bool treesource_error;
-%}
+int dt_plugin_mode = 0;
 
+%}
 %union {
 	char *propnodename;
 	char *labelref;
@@ -121,6 +122,7 @@ header:
 	| DT_V1 ';' DT_PLUGIN ';'
 		{
 			$$ = DTSF_V1 | DTSF_PLUGIN;
+			dt_plugin_mode = 1;
 		}
 	;
 
@@ -174,7 +176,9 @@ devicetree:
 			if (target) {
 				add_label(&target->labels, $2);
 				merge_nodes(target, $4);
-			} else
+			} else if (dt_plugin_mode)
+				add_orphan_node($1, $4, $3);
+			else
 				ERROR(&@3, "Label or path %s not found", $3);
 			$$ = $1;
 		}
@@ -184,6 +188,8 @@ devicetree:
 
 			if (target)
 				merge_nodes(target, $3);
+			else if (dt_plugin_mode)
+				add_orphan_node($1, $3, $2);
 			else
 				ERROR(&@2, "Label or path %s not found", $2);
 			$$ = $1;
