@@ -27,6 +27,7 @@ EOF
 ksu_extras() {
     cat <<'EOF'
 CONFIG_KSU=y
+CONFIG_KSU_SUSFS=y
 CONFIG_KSU_SUSFS_SUS_MEMFD=y
 EOF
 }
