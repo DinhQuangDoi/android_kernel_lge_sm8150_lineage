@@ -8,16 +8,6 @@ on:
         description: 'Run name (for internal use, optional)'
         required: false
         default: 'Manual Run'
-      variant:
-        description: 'Kernel variant'
-        required: true
-        type: choice
-        options:
-          - all
-          - alpha
-          - beta
-          - flash
-          - mh2
       ksu:
         description: 'ReSukiSU?'
         required: false
@@ -43,21 +33,14 @@ on:
 
 jobs:
   matrix-setup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
-      variants: ${{ steps.set-matrix.outputs.variants }}
       ksu_check: ${{ steps.set-matrix.outputs.ksu_check }}
       builds: ${{ steps.set-matrix.outputs.builds }}
     steps:
       - name: Set matrix variables
         id: set-matrix
         run: |
-          if [ "${{ inputs.variant }}" = "all" ]; then
-            echo 'variants=["alpha","beta","flash","mh2"]' >> "$GITHUB_OUTPUT"
-          else
-            echo 'variants=["${{ inputs.variant }}"]' >> "$GITHUB_OUTPUT"
-          fi
-
           if [ "${{ inputs.ksu }}" = "Both" ]; then
             echo 'ksu_check=["Include","Exclude"]' >> "$GITHUB_OUTPUT"
           else
@@ -76,7 +59,6 @@ jobs:
     timeout-minutes: 120
     strategy:
       matrix:
-        variant: ${{ fromJson(needs.matrix-setup.outputs.variants) }}
         ksu: ${{ fromJson(needs.matrix-setup.outputs.ksu_check) }}
         build: ${{ fromJson(needs.matrix-setup.outputs.builds) }}
         exclude:
@@ -107,6 +89,13 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ matrix.ksu }}-${{ github.run_id }}
+          restore-keys: ccache-${{ matrix.ksu }}-
+
       - name: Download Neutron Clang
         run: |
           mkdir -p "$HOME/toolchains/neutron-clang"
@@ -120,17 +109,15 @@ jobs:
           git clone --depth 1 --branch "${{ matrix.build }}" https://github.com/sidex15/n3x7g3n_anykernel3
 
       - name: Build kernel
+        env:
+          CCACHE_DIR: ~/.ccache
         run: |
           ksu_flag=""
           if [ "${{ matrix.ksu }}" = "Include" ]; then
             ksu_flag="--ksu"
           fi
-          build_variant="${{ matrix.variant }}"
-          if [ "$build_variant" = "mh2" ]; then
-            build_variant="mh2lm"
-          fi
           bash ./build_kernel_docker_quick.sh \
-            --variant "$build_variant" \
+            --variant mh2lm \
             $ksu_flag \
             --jobs "${{ inputs.jobs }}" \
             --build "${{ matrix.build }}" \
@@ -138,35 +125,22 @@ jobs:
 
       - name: Copy built kernel to anykernel/magisk directory
         run: |
-          variant="${{ matrix.variant }}"
           build="${{ matrix.build }}"
           ksu="${{ matrix.ksu }}"
 
-          case "$variant" in
-            alpha)  image_name="Image-alpha"; device_codename="#               LG G8                 #" ;;
-            beta)   image_name="Image-beta"; device_codename="#               LG G8s                #" ;;
-            flash)  image_name="Image"; device_codename="#               LG V50                #" ;;
-            mh2)    image_name="Image-mh2lm"; device_codename="#            LG V50s-G8x              #" ;;
-          esac
-
           if [ "$build" = "magisk" ]; then
-            cp "release/Dragon/${image_name}.gz-dtb" "n3x7g3n_anykernel3/Image.gz-dtb"
+            cp "release/Dragon/Image-mh2lm.gz-dtb" "n3x7g3n_anykernel3/Image.gz-dtb"
           else
-            cp "release/Dragon/${image_name}" "n3x7g3n_anykernel3/Image"
-            sed -i "s/#             LG <device>             #/${device_codename}/g" n3x7g3n_anykernel3/banner
+            cp "release/Dragon/Image-mh2lm" "n3x7g3n_anykernel3/Image"
+            sed -i "s/#             LG <device>             #/#            LG V50s-G8x              #/g" n3x7g3n_anykernel3/banner
             if [ "$ksu" = "Include" ]; then
               sed -i "s/#           n3x7g3n kernel            #/#    n3x7g3n kernel (ReSukiSU + SUSFS)    #/g" n3x7g3n_anykernel3/banner
             fi
           fi
 
-          if [ "$variant" = "flash" ]; then
-            cp "release/Dragon/touch_module_s3706.ko" "n3x7g3n_anykernel3/touch_module_s3706.ko"
-          fi
-
       - name: Determine artifact paths
         id: artifacts
         run: |
-          variant="${{ matrix.variant }}"
           build="${{ matrix.build }}"
 
           ksu_flag=""
@@ -176,31 +150,24 @@ jobs:
             ksu_flag="LineageOS"
           fi
 
-          case "$variant" in
-            alpha)  image_name="Image-alpha"; device_codename="G8" ;;
-            beta)   image_name="Image-beta"; device_codename="G8s" ;;
-            flash)  image_name="Image"; device_codename="V50" ;;
-            mh2)    image_name="Image-mh2lm"; device_codename="V50s-G8x" ;;
-          esac
-
           if [ "$build" = "magisk" ]; then
-            artifact_path="release/Dragon/${image_name}.gz-dtb"
+            artifact_path="release/Dragon/Image-mh2lm.gz-dtb"
             build_suffix="magisk"
           else
-            artifact_path="release/Dragon/${image_name}"
+            artifact_path="release/Dragon/Image-mh2lm"
             build_suffix="anykernel3"
           fi
 
           echo "artifact_path=${artifact_path}" >> "$GITHUB_OUTPUT"
-          echo "image_name=${image_name}" >> "$GITHUB_OUTPUT"
-          echo "device_codename=${device_codename}" >> "$GITHUB_OUTPUT"
+          echo "image_name=Image-mh2lm" >> "$GITHUB_OUTPUT"
+          echo "device_codename=V50s-G8x" >> "$GITHUB_OUTPUT"
           echo "ksu_flag=${ksu_flag}" >> "$GITHUB_OUTPUT"
           echo "build_suffix=${build_suffix}" >> "$GITHUB_OUTPUT"
 
       - name: Upload anykernel/magisk artifact
         uses: actions/upload-artifact@v4
         with:
-          name: "${{ steps.artifacts.outputs.device_codename }}-lineageos-${{ steps.artifacts.outputs.build_suffix }}-${{ steps.artifacts.outputs.ksu_flag }}"
+          name: "V50s-G8x-lineageos-${{ steps.artifacts.outputs.build_suffix }}-${{ steps.artifacts.outputs.ksu_flag }}"
           path: n3x7g3n_anykernel3/
           if-no-files-found: error
           retention-days: 30

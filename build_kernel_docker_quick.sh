@@ -140,8 +140,13 @@ if [ "$set_clang_triple" = "true" ]; then
     export CLANG_TRIPLE=aarch64-linux-gnu-
 fi
 
+ccache_prefix=""
+if command -v ccache &>/dev/null; then
+    ccache_prefix="ccache "
+fi
+
 make_args=(
-    CC=clang
+    CC="${ccache_prefix}clang"
     AR=llvm-ar
     NM=llvm-nm
     OBJCOPY=llvm-objcopy
