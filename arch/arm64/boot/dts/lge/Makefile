@@ -68,8 +68,16 @@ endif
 always  := $(dtbo-y)
 
 $(obj)/%.dtbo: $(src)/$(DTS_PROJECT)/$(DTS_TARGET)/%.dts FORCE
-	$(call if_changed_dep,dtc)
+	$(call if_changed_dep,dtbo)
 	$(call if_changed,dtbo_verify)
+
+quiet_cmd_dtbo = DTC     $@
+      cmd_dtbo = mkdir -p $(dir ${dtc-tmp}) ; \
+	$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \
+	$(DTC) -O dtb -o $@ -b 0 \
+		$(addprefix -i,$(dir $<) $(DTC_INCLUDE)) $(DTC_FLAGS) -@ \
+		-d $(depfile).dtc.tmp $(dtc-tmp) ; \
+	cat $(depfile).pre.tmp $(depfile).dtc.tmp > $(depfile)
 
 clean-files := *.dtb
 endif
