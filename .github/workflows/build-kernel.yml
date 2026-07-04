@@ -19,7 +19,7 @@ on:
           - flash
           - mh2
       ksu:
-        description: 'KernelSU Next?'
+        description: 'ReSukiSU?'
         required: false
         type: choice
         options:
@@ -125,8 +125,12 @@ jobs:
           if [ "${{ matrix.ksu }}" = "Include" ]; then
             ksu_flag="--ksu"
           fi
+          build_variant="${{ matrix.variant }}"
+          if [ "$build_variant" = "mh2" ]; then
+            build_variant="mh2lm"
+          fi
           bash ./build_kernel_docker_quick.sh \
-            --variant "${{ matrix.variant }}" \
+            --variant "$build_variant" \
             $ksu_flag \
             --jobs "${{ inputs.jobs }}" \
             --build "${{ matrix.build }}" \
