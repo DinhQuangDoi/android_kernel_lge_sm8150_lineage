@@ -5,11 +5,11 @@ set -euo pipefail
 usage() {
     cat <<'EOF'
 Usage:
-  ./build_kernel_docker_quick.sh --variant <alpha|beta|flash|mh2lm> [--ksu] [--jobs <n>] [--clang-path <path>] [--build <magisk|anykernel>]
+  ./build_kernel_docker_quick.sh --variant mh2lm [--ksu] [--jobs <n>] [--clang-path <path>] [--build <magisk|anykernel>]
 
 Examples:
-  ./build_kernel_docker_quick.sh --variant alpha
-  ./build_kernel_docker_quick.sh --variant alpha --ksu
+  ./build_kernel_docker_quick.sh --variant mh2lm
+  ./build_kernel_docker_quick.sh --variant mh2lm --ksu
   ./build_kernel_docker_quick.sh --variant mh2lm --clang-path ~/toolchains/weebx-clang15/bin
 EOF
 }
@@ -65,45 +65,11 @@ if [ "$build" != "magisk" ] && [ "$build" != "anykernel" ]; then
     exit 1
 fi
 
-set_clang_triple="true"
-
 case "$variant" in
-    alpha)
-        image_name="Image-alpha"
-        history_dir="./release/Dragon/history-alpha"
-        if [ "$ksu" = "true" ]; then
-            defconfig="vendor/lineageos_alpha_ksu_docker_defconfig"
-        else
-            defconfig="vendor/lineageos_alpha_docker_defconfig"
-        fi
-        ;;
-    beta)
-        image_name="Image-beta"
-        history_dir="./release/Dragon/history-beta"
-        if [ "$ksu" = "true" ]; then
-            defconfig="vendor/lineageos_beta_ksu_docker_defconfig"
-        else
-            defconfig="vendor/lineageos_beta_docker_defconfig"
-        fi
-        ;;
-    flash)
-        image_name="Image"
-        history_dir="./release/Dragon/history"
-        if [ "$ksu" = "true" ]; then
-            defconfig="vendor/lineageos_flash_ksu_docker_defconfig"
-        else
-            defconfig="vendor/lineageos_flash_docker_defconfig"
-        fi
-        ;;
     mh2lm)
         image_name="Image-mh2lm"
         history_dir="./release/Dragon/history-mh2lm"
-        if [ "$ksu" = "true" ]; then
-            defconfig="vendor/lineageos_mh2_ksu_docker_defconfig"
-        else
-            defconfig="vendor/lineageos_mh2_docker_defconfig"
-            set_clang_triple="false"
-        fi
+        defconfig="vendor/lineageos_mh2_defconfig"
         ;;
     *)
         echo "Error: invalid variant '$variant'"
@@ -136,9 +102,7 @@ export SUBARCH=arm64
 export PATH="${CLANG_PATH}:${PATH}"
 export CROSS_COMPILE=aarch64-linux-gnu-
 export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
-if [ "$set_clang_triple" = "true" ]; then
-    export CLANG_TRIPLE=aarch64-linux-gnu-
-fi
+export CLANG_TRIPLE=aarch64-linux-gnu-
 
 ccache_prefix=""
 if command -v ccache &>/dev/null; then
