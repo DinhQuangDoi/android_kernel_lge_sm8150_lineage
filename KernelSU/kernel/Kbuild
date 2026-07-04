@@ -129,7 +129,16 @@ ifeq ($(CONFIG_KSU),y)
   endif
 endif
 
-ifdef CONFIG_KSU_TRACEPOINT_HOOK
+ifdef CONFIG_KSU_SUSFS
+  $(info -- $(REPO_NAME): using SuSFS Inline hook)
+  include $(KSU_SRC)/tools/inline_hook_check.mk
+  include $(KSU_SRC)/tools/susfs_compat.mk
+
+else ifdef CONFIG_KSU_MANUAL_HOOK
+  $(info -- $(REPO_NAME): using Manual Hook)
+  include $(KSU_SRC)/tools/manual_hook_check.mk
+
+else ifdef CONFIG_KSU_TRACEPOINT_HOOK
   $(info -- $(REPO_NAME): using Tracepoint Syscall Redirect Hook)
 
   ifndef CONFIG_KSU_DISABLE_MANAGER
@@ -161,13 +170,7 @@ ifdef CONFIG_KSU_TRACEPOINT_HOOK
     endif
   endif
 
-else ifdef CONFIG_KSU_MANUAL_HOOK
-  $(info -- $(REPO_NAME): using Manual Hook)
-  include $(KSU_SRC)/tools/manual_hook_check.mk
-else ifdef CONFIG_KSU_SUSFS
-  $(info -- $(REPO_NAME): using SuSFS Inline hook)
-  include $(KSU_SRC)/tools/inline_hook_check.mk
-  include $(KSU_SRC)/tools/susfs_compat.mk
+else
   ifeq ($(shell test -e $(srctree)/fs/susfs.c; echo $$?),0)
     $(eval SUSFS_VERSION=$(shell cat $(srctree)/include/linux/susfs.h | grep -E '^#define SUSFS_VERSION' | cut -d' ' -f3 | sed 's/"//g'))
     $(info )
