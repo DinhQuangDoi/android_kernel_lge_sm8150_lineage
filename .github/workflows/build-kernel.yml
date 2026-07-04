@@ -16,7 +16,7 @@ on:
           - Include
           - Exclude
           - Both
-        default: Exclude
+        default: Include
       build:
         description: 'Output format'
         required: false
