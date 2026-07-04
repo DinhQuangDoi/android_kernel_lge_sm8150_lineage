@@ -117,6 +117,7 @@ make_args=(
     OBJDUMP=llvm-objdump
     STRIP=llvm-strip
     O=out
+    KCFLAGS="-Wno-implicit-enum-enum-cast"
 )
 
 echo
