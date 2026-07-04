@@ -13,6 +13,7 @@
 
 /dts-v1/;
 /plugin/;
+/ { };
 
 #include "sm8150-mh2lm_sb_jp.dtsi"
 #include "sm8150-mh2lm_sb_jp-sound_rev-b.dtsi"
